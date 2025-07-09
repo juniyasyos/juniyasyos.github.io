@@ -1,0 +1,52 @@
+# Workflow untuk membangun dan mendeply situs Jekyll ke GitHub Pages
+
+name: Deploy Jekyll to GitHub Pages
+
+on:
+  # Jalan ketika ada push ke branch utama
+  push:
+    branches: ["main"]
+
+  # Bisa dijalankan manual dari tab Actions
+  workflow_dispatch:
+
+# Set izin untuk GITHUB_TOKEN agar bisa deploy ke GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Hanya izinkan satu proses deploy berjalan dalam satu waktu
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build Jekyll site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
